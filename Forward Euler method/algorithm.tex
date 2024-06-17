@@ -1,0 +1,86 @@
+\documentclass[12pt]{article}
+\usepackage[top=2cm, bottom=2cm, left=2.5cm, right=2.5cm]{geometry}
+\usepackage[linesnumbered,ruled]{algorithm2e}
+\usepackage{amsmath}
+\usepackage[UTF8]{ctex}
+ 
+\begin{document}
+% \renewcommand{\listalgorithmcfname}{算\ 法\ 目\ 录}
+% \listofalgorithms
+\begin{algorithm}[H]
+% \renewcommand{\algorithmcfname}{算法}
+\renewcommand{\thealgocf}{Main}
+\caption{Forward Euler method for multi-surface plasticity}
+
+\KwIn{$\sigma^t$, $k_s^t$, $k_c^t$, $d\epsilon^{t+1}$}
+\KwOut{$\sigma^{t+1}$, $k_s^{t+1}$, $k_c^{t+1}$}
+
+$\sigma^{trial}=\sigma^t+[K]d\epsilon^{t+1}$;
+$F_s^t=F_s(\sigma^{trial}, k_s^t)$;
+$F_c^t=F_c(\sigma^{trial}, k_c^t)$\\
+\uIf{$F_s^t \leq 0$ and $F_c^t \leq 0$}
+{$d\epsilon^e=d\epsilon^{t+1}$; $k_s^{t+1}=k_s^t$; $k_c^{t+1}=k_c^t$}
+\uElseIf{$F_s^t > 0$ and $F_c^t \leq 0$}
+{Call \textbf{Shear mapping}}
+\uElseIf{$F_s^t \leq 0$ and $F_c^t > 0$}
+{Call \textbf{Cap mapping}}
+\ElseIf{$F_s^t > 0$ and $F_c^t > 0$}
+{{$[H] =
+\begin{bmatrix}
+-\frac{\partial F_s}{\partial k_s} \frac{\partial k_s}{\partial \epsilon^p} \frac{\partial Q_s}{\partial \sigma} & -\frac{\partial F_s}{\partial k_s} \frac{\partial k_s}{\partial \epsilon^p} \frac{\partial Q_c}{\partial \sigma}\\
+-\frac{\partial F_c}{\partial k_c} \frac{\partial k_c}{\partial \epsilon^p} \frac{\partial Q_s}{\partial \sigma} & -\frac{\partial F_c}{\partial k_c} \frac{\partial k_c}{\partial \epsilon^p} \frac{\partial Q_c}{\partial \sigma}
+\end{bmatrix}$\\
+$[A] =
+\begin{bmatrix}
+\frac{\partial F_s}{\partial \sigma} [K] \frac{\partial Q_s}{\partial \sigma} + H_{ss} & \frac{\partial F_s}{\partial \sigma} [K] \frac{\partial Q_c}{\partial \sigma} + H_{sc}\\
+\frac{\partial F_c}{\partial \sigma} [K] \frac{\partial Q_s}{\partial \sigma} + H_{cs} & \frac{\partial F_c}{\partial \sigma} [K] \frac{\partial Q_c}{\partial \sigma} + H_{cc}
+\end{bmatrix}$\\
+$
+\begin{bmatrix}
+d \lambda_s\\
+d \lambda_c
+\end{bmatrix} =
+[A]^{-1}
+\begin{bmatrix}
+\frac{\partial F_s}{\partial \sigma} [K] d\epsilon\\
+\frac{\partial F_c}{\partial \sigma} [K] d\epsilon
+\end{bmatrix}$\\}
+\uIf{$d\lambda_s > 0$ and $d\lambda_c \leq 0$}
+{Call \textbf{Shear mapping}}
+\uElseIf{$d\lambda_s > 0$ and $d\lambda_c \leq 0$}
+{Call \textbf{Cap mapping}}
+\uElseIf{$d\lambda_s > 0$ and $d\lambda_c \leq 0$}
+{\text{Concave yield surface}\\
+\textbf{Quit Algorithm}}
+\Else
+{$d\epsilon^p = d\lambda_s \frac{\partial Q_s}{\partial \sigma} + d\lambda_c \frac{\partial Q_c}{\partial \sigma} \qquad
+d\epsilon^e=d\epsilon^{t+1}-d\epsilon^p \qquad
+d k_i^{t+1}=d k_i(d\epsilon^p)$}}
+$\sigma^{t+1}=\sigma^t+[K]d\epsilon^e$\qquad$k_i^{t+1}=k_i^t+dk_i^{t+1}$
+\end{algorithm}
+
+\begin{algorithm}[H]
+\renewcommand{\thealgocf}{Subroutine1}
+\caption{Shear mapping}
+\KwIn{$F_s^t$, $k_s^t$, $d\epsilon^{t+1}$}
+\KwOut{$d\epsilon^p$, $d\epsilon^e$, $k_s^{t+1}$}
+$H_{ss} = - \frac{\partial F_s}{\partial k_s} \frac{\partial k_s}{\partial \epsilon^p} \frac{\partial Q_s}{\partial \sigma}$\\
+$d\lambda_s = \frac{\frac{\partial F_s}{\partial \sigma}[K]d\epsilon}{\frac{\partial F_s}{\partial \sigma}[K]\frac{\partial Q_s}{\partial \sigma}+H_{ss}}$\\
+$d\epsilon^p=d\lambda_s \frac{\partial Q_s}{\partial \sigma}$\\
+$d\epsilon^e=d\epsilon^{t+1}-d\epsilon^p$\\
+$dk_s^{t+1}=dk_s(\epsilon^p)$\\
+\end{algorithm}
+
+\begin{algorithm}[H]
+\renewcommand{\thealgocf}{Subroutine2}
+\caption{Cap mapping}
+\KwIn{$F_c^t$, $k_c^t$, $d\epsilon^{t+1}$}
+\KwOut{$d\epsilon^p$, $d\epsilon^e$, $k_c^{t+1}$}
+$H_{cc} = - \frac{\partial F_c}{\partial k_c} \frac{\partial k_c}{\partial \epsilon^p} \frac{\partial Q_c}{\partial \sigma}$\\
+$d\lambda_c = \frac{\frac{\partial F_c}{\partial \sigma}[K]d\epsilon}{\frac{\partial F_c}{\partial \sigma}[K]\frac{\partial Q_c}{\partial \sigma}+H_{cc}}$\\
+$d\epsilon^p=d\lambda_c \frac{\partial Q_c}{\partial \sigma}$\\
+$d\epsilon^e=d\epsilon^{t+1}-d\epsilon^p$\\
+$dk_s^{t+1}=dk_s\epsilon^p)$\\
+\end{algorithm}
+
+\end{document}
